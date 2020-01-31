@@ -430,6 +430,7 @@ def printable(blist):
 def Check_heap(binary,args=None,start_addr=None,limit=None):
     argv=ct.create_argv(binary,args)
     extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY}
+    # extras={}
     p = angr.Project(binary,auto_load_libs=False)#
     p.hook_symbol('malloc',malloc_hook())
     p.hook_symbol('free',free_hook())
