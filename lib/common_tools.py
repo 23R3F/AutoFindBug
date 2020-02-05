@@ -56,7 +56,7 @@ def deal_history(state,hist_list):
     for k in func_plt:
         if func_plt[k]=='main+0x0':
             main_addr=k
-
+    # state.globals['main_addr']=main_addr
 
     flag=0
     result="[1]"

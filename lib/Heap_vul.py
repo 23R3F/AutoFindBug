@@ -23,6 +23,7 @@ class malloc_hook(angr.procedures.libc.malloc.malloc):
             malloc_dir=self.state.globals["has_malloc"]
 
         malloc_dir[addr]=size
+
         # print(self.state.globals["has_malloc"])
         return addr
 
@@ -172,6 +173,8 @@ class free_hook(angr.procedures.libc.free.free):
         # print("free addr:",hex(f_ptr))
         self.argument_types = {0: self.ty_ptr(SimTypeTop())}
         f_ptr=self.state.solver.eval(ptr)
+        # if "has_free" not in self.state.globals:
+        #     self.state.globals["has_free"]={}
 
         if "has_malloc" in self.state.globals:
             malloc_dir=self.state.globals["has_malloc"]
@@ -194,8 +197,16 @@ class free_hook(angr.procedures.libc.free.free):
                         paths,print_paths=self.deal_history(self.state,hists)
                         error_free_paths=self.state.globals['error_free_paths']
                         limit=self.state.globals['limit']
-                        if self.cmp_path(paths,error_free_paths,limit):
-                            self.save_msg(self.state,"error_free_result",print_paths)
+                        # print("**********error_free_paths 1**************")
+                        # print(self.state.posix.dumps(1))
+                        # ct.print_list(malloc_dir)
+                        # ct.print_list(free_dir)
+                        # print(print_paths)
+                        # ct.print_list(hists)
+                        # self.state.regs.rip=0
+                        
+                        # if self.cmp_path(paths,error_free_paths,limit):
+                        #     self.save_msg(self.state,"error_free_result",print_paths)
 
                         self.state.globals['error_free_ptr']=True
 
@@ -206,8 +217,14 @@ class free_hook(angr.procedures.libc.free.free):
                     paths,print_paths=self.deal_history(self.state,hists)
                     error_free_paths=self.state.globals['error_free_paths']
                     limit=self.state.globals['limit']
-                    if self.cmp_path(paths,error_free_paths,limit):
-                        self.save_msg(self.state,"error_free_result",print_paths)
+                    # print("**********error_free_paths 2**************")
+                    # print(self.state.posix.dumps(1))
+                    # print(print_paths)
+                    # ct.print_list(hists)
+                    # self.state.regs.rip=0
+
+                    # if self.cmp_path(paths,error_free_paths,limit):
+                    #     self.save_msg(self.state,"error_free_result",print_paths)
 
                     self.state.globals['error_free_ptr']=True
 
@@ -226,12 +243,19 @@ class free_hook(angr.procedures.libc.free.free):
 
         else:
             # self.state.globals["error_free_ptr"]=hex(f_ptr)
+
             hists=self.state.history.bbl_addrs.hardcopy
             paths,print_paths=self.deal_history(self.state,hists)
             error_free_paths=self.state.globals['error_free_paths']
             limit=self.state.globals['limit']
-            if self.cmp_path(paths,error_free_paths,limit):
-                self.save_msg(self.state,"error_free_result",print_paths)
+            # print("**********error_free_paths 3**************")
+            # print(self.state.posix.dumps(1))
+            # print(print_paths)
+            # ct.print_list(hists)
+            # self.state.regs.rip=0
+
+            # if self.cmp_path(paths,error_free_paths,limit):
+            #     self.save_msg(self.state,"error_free_result",print_paths)
             self.state.globals['error_free_ptr']=True
 
         return self.state.heap._free(ptr)

@@ -14,7 +14,7 @@ def check_symbolic_bits(state,val):
 
 
 
-def check_state_addr(pc,all_objects):
+def check_pc_addr(pc,all_objects):
 
     flag=0
     addr=[]
@@ -28,6 +28,13 @@ def check_state_addr(pc,all_objects):
         return True
     else:
         return False
+def check_rsp_addr(state):
+    true_rsp=state.history.stack_actions.hardcopy[0].callframe.stack_ptr&0xfffffffffff00000
+    now_rsp=state.solver.eval(state.regs.rsp)&0xfffffffffff00000
+    if true_rsp==now_rsp:
+        return False
+    else:
+        return True
 
 def print_pc_error_msg(pc,state):
     hists=state.history.bbl_addrs.hardcopy
@@ -195,6 +202,10 @@ def check_unconstrained(state):
         fp.close()
 
 
+def return_main(filename):
+    pro = angr.Project(filename,auto_load_libs=False)
+    pro.analyses.CFG()
+    return pro.loader.main_object.symbols_by_name['main'].rebased_addr
 
 def check_regs(state):
     all_objects=state.project.loader.all_objects
@@ -206,19 +217,43 @@ def check_regs(state):
     # print("sp",sp)
 
     pc=state.solver.eval(state.regs.pc)
-    if check_state_addr(pc,all_objects):
+    # print()
+    # input("[pause]")
+    if check_pc_addr(pc,all_objects):
         print_pc_error_msg(pc,state)
         # input("pc invaild [pause]")
 
-    if sp.symbolic:
+    main_addr=return_main(state.globals['filename'])
+    # main_addr=state.globals['main_addr']
+    if state.history.stack_actions.hardcopy==None :
+        return
+    if main_addr not in state.history.bbl_addrs.hardcopy:
+        return
+    true_stack=state.history.stack_actions.hardcopy[0].callframe.stack_ptr&0xfffffffffff00000
+    now_rsp=state.solver.eval(state.regs.rsp)&0xfffffffffff00000
+    now_rbp=state.solver.eval(state.regs.rbp)&0xfffffffffff00000
+    if now_rsp!=true_stack:
         print_sp_error_msg(state)
+        # print(state.history.stack_actions.hardcopy)
+        # print(state.solver.eval(state.regs.rsp))
+        # print(state.solver.eval(state.regs.rbp))
+        # ct.print_list(state.history.bbl_addrs.hardcopy)
+        # print(hex(main_addr))
+        # input("[pause]")
+
         # print("sp reg symbolic:",sp)
         # print("pc",hex(pc))
         # print("stdin:",state.posix.dumps(0))
         # input("sp reg symbolic [pause]")
 
-    if bp.symbolic:
+    if now_rbp!=true_stack:
         print_bp_error_msg(state)
+        # print(state.history.stack_actions.hardcopy)
+        # print(state.solver.eval(state.regs.rsp))
+        # print(state.solver.eval(state.regs.rbp))
+        # ct.print_list(state.history.bbl_addrs.hardcopy)
+        # print(hex(main_addr))
+        # input("[pause]")
         # print("bp reg symbolic:",bp)
         # print("pc",hex(pc))
         # print("stdin:",state.posix.dumps(0))
@@ -243,7 +278,7 @@ def Check_regs_error(binary,args=None,start_addr=None,limit=None):
     if limit:
         state.globals['limit']=limit
     else:
-        state.globals['limit']=6
+        state.globals['limit']=3
 
     state.globals['pc_error_paths']=[]
     state.globals['sp_error_paths']=[]
