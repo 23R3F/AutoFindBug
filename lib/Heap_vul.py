@@ -170,93 +170,78 @@ class free_hook(angr.procedures.libc.free.free):
         fp.close()
 
     def run(self, ptr):
-        # print("free addr:",hex(f_ptr))
         self.argument_types = {0: self.ty_ptr(SimTypeTop())}
         f_ptr=self.state.solver.eval(ptr)
-        # if "has_free" not in self.state.globals:
-        #     self.state.globals["has_free"]={}
 
-        if "has_malloc" in self.state.globals:
-            malloc_dir=self.state.globals["has_malloc"]
-            if f_ptr not in malloc_dir:
-                if "has_free" in self.state.globals:
-                    free_dir=self.state.globals["has_free"]
-                    if f_ptr in free_dir:
-
-                        hists=self.state.history.bbl_addrs.hardcopy
-                        paths,print_paths=self.deal_history(self.state,hists)
-                        double_free_paths=self.state.globals['double_free_paths']
-                        limit=self.state.globals['limit']
-                        if self.cmp_path(paths,double_free_paths,limit):
-                            self.save_msg(self.state,"double_free_result",print_paths)
-                        
-                        self.state.globals['double_free']=True
-
-                    else:
-                        hists=self.state.history.bbl_addrs.hardcopy
-                        paths,print_paths=self.deal_history(self.state,hists)
-                        error_free_paths=self.state.globals['error_free_paths']
-                        limit=self.state.globals['limit']
-                        # print("**********error_free_paths 1**************")
-                        # print(self.state.posix.dumps(1))
-                        # ct.print_list(malloc_dir)
-                        # ct.print_list(free_dir)
-                        # print(print_paths)
-                        # ct.print_list(hists)
-                        # self.state.regs.rip=0
-                        
-                        # if self.cmp_path(paths,error_free_paths,limit):
-                        #     self.save_msg(self.state,"error_free_result",print_paths)
-
-                        self.state.globals['error_free_ptr']=True
-
-                else:
-                    self.state.globals["has_free"]={}
-                    # free_dir=self.state.globals["has_free"]
-                    hists=self.state.history.bbl_addrs.hardcopy
-                    paths,print_paths=self.deal_history(self.state,hists)
-                    error_free_paths=self.state.globals['error_free_paths']
-                    limit=self.state.globals['limit']
-                    # print("**********error_free_paths 2**************")
-                    # print(self.state.posix.dumps(1))
-                    # print(print_paths)
-                    # ct.print_list(hists)
-                    # self.state.regs.rip=0
-
-                    # if self.cmp_path(paths,error_free_paths,limit):
-                    #     self.save_msg(self.state,"error_free_result",print_paths)
-
-                    self.state.globals['error_free_ptr']=True
-
-            else:
-                size=malloc_dir[f_ptr]
-                malloc_dir.pop(f_ptr)
-                if "has_free" in self.state.globals:
-                    free_dir=self.state.globals["has_free"]
-                    free_dir[f_ptr]=size
-                    # print(self.state.globals["has_free"])
-                else:
-                    self.state.globals["has_free"]={}
-                    free_dir=self.state.globals["has_free"]
-                    free_dir[f_ptr]=size
-                    # print(self.state.globals["has_free"])
-
+        if "has_free" in self.state.globals:
+            has_free=self.state.globals["has_free"]
+            if f_ptr in has_free:
+                hists=self.state.history.bbl_addrs.hardcopy
+                paths,print_paths=self.deal_history(self.state,hists)
+                double_free_paths=self.state.globals['double_free_paths']
+                limit=self.state.globals['limit']
+                if self.cmp_path(paths,double_free_paths,limit):
+                    self.save_msg(self.state,"double_free_result",print_paths)
+                
+                self.state.globals['double_free']=True
         else:
-            # self.state.globals["error_free_ptr"]=hex(f_ptr)
+            self.state.globals["has_free"]={}
+            has_free=self.state.globals["has_free"]
+            if "has_malloc" in self.state.globals:
+                has_malloc=self.state.globals["has_malloc"]
+                if f_ptr in has_malloc:
+                    has_free[f_ptr]=has_malloc[f_ptr]
+        #-----------------------------------------------------------------
+        # if "has_malloc" in self.state.globals:
+        #     malloc_dir=self.state.globals["has_malloc"]
+        #     if f_ptr not in malloc_dir:
+        #         if "has_free" in self.state.globals:
+        #             free_dir=self.state.globals["has_free"]
+        #             if f_ptr in free_dir:
 
-            hists=self.state.history.bbl_addrs.hardcopy
-            paths,print_paths=self.deal_history(self.state,hists)
-            error_free_paths=self.state.globals['error_free_paths']
-            limit=self.state.globals['limit']
-            # print("**********error_free_paths 3**************")
-            # print(self.state.posix.dumps(1))
-            # print(print_paths)
-            # ct.print_list(hists)
-            # self.state.regs.rip=0
+        #                 hists=self.state.history.bbl_addrs.hardcopy
+        #                 paths,print_paths=self.deal_history(self.state,hists)
+        #                 double_free_paths=self.state.globals['double_free_paths']
+        #                 limit=self.state.globals['limit']
+        #                 if self.cmp_path(paths,double_free_paths,limit):
+        #                     self.save_msg(self.state,"double_free_result",print_paths)
+                        
+        #                 self.state.globals['double_free']=True
 
-            # if self.cmp_path(paths,error_free_paths,limit):
-            #     self.save_msg(self.state,"error_free_result",print_paths)
-            self.state.globals['error_free_ptr']=True
+        #             else:
+        #                 hists=self.state.history.bbl_addrs.hardcopy
+        #                 paths,print_paths=self.deal_history(self.state,hists)
+        #                 error_free_paths=self.state.globals['error_free_paths']
+        #                 limit=self.state.globals['limit']
+        #                 self.state.globals['error_free_ptr']=True
+
+        #         else:
+        #             self.state.globals["has_free"]={}
+        #             # free_dir=self.state.globals["has_free"]
+        #             hists=self.state.history.bbl_addrs.hardcopy
+        #             paths,print_paths=self.deal_history(self.state,hists)
+        #             error_free_paths=self.state.globals['error_free_paths']
+        #             limit=self.state.globals['limit']
+        #             self.state.globals['error_free_ptr']=True
+
+        #     else:
+        #         size=malloc_dir[f_ptr]
+        #         malloc_dir.pop(f_ptr)
+        #         if "has_free" in self.state.globals:
+        #             free_dir=self.state.globals["has_free"]
+        #             free_dir[f_ptr]=size
+        #         else:
+        #             self.state.globals["has_free"]={}
+        #             free_dir=self.state.globals["has_free"]
+        #             free_dir[f_ptr]=size
+
+
+        # else:
+        #     hists=self.state.history.bbl_addrs.hardcopy
+        #     paths,print_paths=self.deal_history(self.state,hists)
+        #     error_free_paths=self.state.globals['error_free_paths']
+        #     limit=self.state.globals['limit']
+        #     self.state.globals['error_free_ptr']=True
 
         return self.state.heap._free(ptr)
 
@@ -453,7 +438,7 @@ def printable(blist):
 
 def Check_heap(binary,args=None,start_addr=None,limit=None):
     argv=ct.create_argv(binary,args)
-    extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY}
+    extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY,so.ZERO_FILL_UNCONSTRAINED_MEMORY}
     # extras={}
     p = angr.Project(binary,auto_load_libs=False)#
     p.hook_symbol('malloc',malloc_hook())
@@ -491,15 +476,15 @@ def Check_heap(binary,args=None,start_addr=None,limit=None):
     # simgr.run()
     while simgr.active:
         for act in simgr.active:
-            if "error_free_ptr" in act.globals or "double_free" in act.globals:
-                act.regs.rip=0x666
+            # if "error_free_ptr" in act.globals or "double_free" in act.globals:
+            #     act.regs.rip=0x666
                 
-            if "uaf_read" in act.globals:
-                act.regs.rip=0x666
-                # input("[pause]")
-            if "uaf_write" in act.globals:
-                act.regs.rip=0x666
-                # input("[pause]")
+            # if "uaf_read" in act.globals:
+            #     act.regs.rip=0x666
+            #     # input("[pause]")
+            # if "uaf_write" in act.globals:
+            #     act.regs.rip=0x666
+            #     # input("[pause]")
 
             Check_UAF_R(act)
             Check_UAF_W(act)
