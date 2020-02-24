@@ -239,7 +239,7 @@ def Check_StackOverflow(binary,args=None,start_addr=None,limit=None):
     #args is a list that contain each arg'size
     #if use start_addr,that means use  p.factory.blank_state()
     argv=ct.create_argv(binary,args)
-    extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY}
+    extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY,so.ZERO_FILL_UNCONSTRAINED_MEMORY}
     p = angr.Project(binary,auto_load_libs=False)
     # bytes_list = [claripy.BVS('in_0x%x' % i, 8) for i in range(size)]
     # str_in = claripy.Concat(*bytes_list)

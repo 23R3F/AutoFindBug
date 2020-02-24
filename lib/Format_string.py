@@ -132,7 +132,7 @@ class printf_hook(angr.procedures.libc.printf.printf):
 
 def Check_format_string(binary,args=None,start_addr=None,limit=None):
     argv=ct.create_argv(binary,args)
-    extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY}
+    extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY,so.ZERO_FILL_UNCONSTRAINED_MEMORY}
     p = angr.Project(binary,auto_load_libs=False)#
     p.hook_symbol('printf',printf_hook())
 
