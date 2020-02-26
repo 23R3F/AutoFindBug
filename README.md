@@ -16,7 +16,7 @@ git clone https://github.com/23R3F/AutoFindBug.git
 
 cd AutoFindBug
 
- ./install_env.sh
+chmod u+x ./install_env.sh && ./install_env.sh
 
 
 
