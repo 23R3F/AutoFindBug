@@ -1,7 +1,5 @@
 import angr
-# import claripy
 from angr import sim_options as so
-
 from lib import common_tools as ct
 import json
 
@@ -71,36 +69,83 @@ class printf_hook(angr.procedures.libc.printf.printf):
             if flag==0:
                 result+=hex(h)+"-->"
 
-        return result[:-3]
+        return hist_list,result[:-3]
 
+    def min_distance(self,str1,str2):
+        len_str1 = len(str1) + 1
+        len_str2 = len(str2) + 1
+        #create matrix
+        matrix = [0 for n in range(len_str1 * len_str2)]
+        #init x axis
+        for i in range(len_str1):
+            matrix[i] = i
+        #init y axis
+        for j in range(0, len(matrix), len_str1):
+            if j % len_str1 == 0:
+                matrix[j] = j // len_str1
+              
+        for i in range(1, len_str1):
+            for j in range(1, len_str2):
+                if str1[i-1] == str2[j-1]:
+                    cost = 0
+                else:
+                    cost = 1
+                matrix[j*len_str1+i] = min(matrix[(j-1)*len_str1+i]+1,
+                                            matrix[j*len_str1+(i-1)]+1,
+                                            matrix[(j-1)*len_str1+(i-1)] + cost)
+
+        min_dis=matrix[-1]
+        ratio=(max(len_str1,len_str2)-min_dis)/max(len_str1,len_str2)
+        # print("min_dis",min_dis,"ratio",ratio)
+        return min_dis,ratio
+
+    def cmp_path(self,inpath,outpath,limit):
+        if outpath:
+            tmp=[]
+            for alist in outpath:
+                dis,ratio= self.min_distance(alist,inpath)
+                tmp.append(dis)
+
+            min_dis=min(tmp)
+
+            if min_dis<=limit:
+                print("[-]find a repeat path,drop it,min_dis is",min_dis)
+                return False
+            else:
+                outpath.append(inpath)
+                return True
+        else:
+            outpath.append(inpath)
+            return True
 
 
     def run_hook(self):
         fmt_str=self.state.memory.load(self.state.solver.eval(self.arg(0)) )
         if fmt_str.symbolic:
             hist= self.state.history.bbl_addrs.hardcopy
-            print_paths=self.deal_history(self.state,hist)
+            paths,print_paths=self.deal_history(self.state,hist)
+            fmt_paths=self.state.globals['fmt_paths']
+            limit=self.state.globals['limit']
 
-            path_dir={'fmt_result':{}}
-            path_dir['fmt_result']['stdin']=str(self.state.posix.dumps(0))
-            path_dir['fmt_result']['stdout']=str(self.state.posix.dumps(1))
-            path_dir['fmt_result']['chain']=print_paths
+            if self.cmp_path(paths,fmt_paths,limit):
+                path_dir={'fmt_result':{}}
+                path_dir['fmt_result']['stdin']=str(self.state.posix.dumps(0))
+                path_dir['fmt_result']['stdout']=str(self.state.posix.dumps(1))
+                path_dir['fmt_result']['chain']=print_paths
 
-            if 'argv'in self.state.globals:
-                argv=self.state.globals['argv']
-                argv_ret=[]
-                # print("[PC]inputs",len(argv),"args:")
-                for x in argv:
-                    # print(state.solver.eval(x,cast_to=bytes))
-                    argv_ret.append( str(self.state.solver.eval(x,cast_to=bytes)) )
-                path_dir['fmt_result']['argv']=argv_ret
+                if 'argv'in self.state.globals:
+                    argv=self.state.globals['argv']
+                    argv_ret=[]
+                    for x in argv:
+                        argv_ret.append( str(self.state.solver.eval(x,cast_to=bytes)) )
+                    path_dir['fmt_result']['argv']=argv_ret
 
-            fp=open("tmp.json","a")
-            json_str = json.dumps(path_dir)
-            fp.write(json_str+"\n")
-            fp.close()
+                fp=open("tmp.json","a")
+                json_str = json.dumps(path_dir)
+                fp.write(json_str+"\n")
+                fp.close()
 
-            return True
+                return True
 
         return False
 
@@ -135,6 +180,7 @@ def Check_format_string(binary,args=None,start_addr=None,limit=None):
         state.globals['limit']=2
 
     state.globals['filename']=binary
+    state.globals['fmt_paths']=[]
     
     simgr = p.factory.simulation_manager(state)#, save_unconstrained=True
     simgr.use_technique(angr.exploration_techniques.Spiller())
