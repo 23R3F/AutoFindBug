@@ -115,20 +115,12 @@ def cmp_path(inpath,outpath,limit):
         for alist in outpath:
             dis,ratio= min_distance(alist,inpath)
             tmp.append(dis)
-            # print("min_dis:",min_dis,"ratio:",ratio)
-            # input("[pause]")
         min_dis=min(tmp)
 
         if min_dis<=limit:
             print("[-]find a repeat path,drop it,min_dis is",min_dis)
             return False
         else:
-            # print("min_dis:",min_dis)
-            # print("target:")
-            # for alist in outpath:
-            #     print_list(alist)
-            # print("new path::")
-            # print_list(inpath)
             outpath.append(inpath)
             return True
     else:

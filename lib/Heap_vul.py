@@ -130,20 +130,13 @@ class free_hook(angr.procedures.libc.free.free):
             for alist in outpath:
                 dis,ratio= self.min_distance(alist,inpath)
                 tmp.append(dis)
-                # print("min_dis:",min_dis,"ratio:",ratio)
-                # input("[pause]")
+
             min_dis=min(tmp)
 
             if min_dis<=limit:
                 print("[-]find a repeat path,drop it,min_dis is",min_dis)
                 return False
             else:
-                # print("min_dis:",min_dis)
-                # print("target:")
-                # for alist in outpath:
-                #     print_list(alist)
-                # print("new path::")
-                # print_list(inpath)
                 outpath.append(inpath)
                 return True
         else:
@@ -152,7 +145,6 @@ class free_hook(angr.procedures.libc.free.free):
 
     def save_msg(self,state,dir_name,print_paths):
         path_dir={dir_name:{}}
-        # path_dir['pc_overflow_result']['over_num']=hex(byte_s)
         path_dir[dir_name]['stdin']=str(state.posix.dumps(0))
         path_dir[dir_name]['stdout']=str(state.posix.dumps(1))
         path_dir[dir_name]['chain']=print_paths
@@ -234,14 +226,13 @@ class free_hook(angr.procedures.libc.free.free):
         #             self.state.globals["has_free"]={}
         #             free_dir=self.state.globals["has_free"]
         #             free_dir[f_ptr]=size
-
-
         # else:
         #     hists=self.state.history.bbl_addrs.hardcopy
         #     paths,print_paths=self.deal_history(self.state,hists)
         #     error_free_paths=self.state.globals['error_free_paths']
         #     limit=self.state.globals['limit']
         #     self.state.globals['error_free_ptr']=True
+        #-----------------------------------------------------------------
 
         return self.state.heap._free(ptr)
 
@@ -276,13 +267,7 @@ def Check_UAF_R(state):
 
         malloc_dir=state.globals["has_malloc"]
         free_dir=state.globals["has_free"]
-        # print("free list:")
-        # for x in free_dir:
-        #     print(hex(x))
-        # print("malloc list:")
-        # for x in malloc_dir:
-        #     print(hex(x))
-        
+
         for act in action:
             if act.type=='mem' and act.action=='read' :
                 addr=check_addr(state,act)
@@ -297,26 +282,7 @@ def Check_UAF_R(state):
                         uaf_read_paths=state.globals['uaf_read_paths']
                         limit=state.globals['limit']
                         if ct.cmp_path(paths,uaf_read_paths,limit):
-                            # print("\n[========find a UAF read========]")
-                            # print("[UAF-R]trigger arbitrary read input:")
-                            # print(state.posix.dumps(0))
-                            # print("[UAF-R]stdout:")
-                            # print(state.posix.dumps(1))
-                            # print("[UAF-R]history jump chain:")
-                            # print(print_paths)
-                            # # input("[pause]")
-                            
-                            # if 'argv' in state.globals:
-                            #     argv=state.globals['argv']
-                            #     print("[UAF-R]inputs",len(argv),"args:")
-                            #     for x in argv:
-                            #         print(state.solver.eval(x,cast_to=bytes))
-                            # print(state.regs.rip)
-                            # print(act,hex(addr))
-                            # print(act.data)
-                            # # print(hex(state.callstack.ret_addr))
                             path_dir={'uaf_R_result':{}}
-                            # path_dir['pc_overflow_result']['over_num']=hex(byte_s)
                             path_dir['uaf_R_result']['stdin']=str(state.posix.dumps(0))
                             path_dir['uaf_R_result']['stdout']=str(state.posix.dumps(1))
                             path_dir['uaf_R_result']['chain']=print_paths
@@ -333,7 +299,6 @@ def Check_UAF_R(state):
                             fp.write(json_str+"\n")
                             fp.close()
 
-                            # input("[pause]")
                             state.globals["uaf_read"]=True
                             
                             
@@ -360,12 +325,6 @@ def Check_UAF_W(state):
 
         malloc_dir=state.globals["has_malloc"]
         free_dir=state.globals["has_free"]
-        # print("free list:")
-        # for x in free_dir:
-        #     print(hex(x))
-        # print("malloc list:")
-        # for x in malloc_dir:
-        #     print(hex(x))
         
         for act in action:
             if act.type=='mem' and act.action=='write' :
@@ -381,26 +340,7 @@ def Check_UAF_W(state):
                         uaf_write_paths=state.globals['uaf_write_paths']
                         limit=state.globals['limit']
                         if ct.cmp_path(paths,uaf_write_paths,limit):
-                            # print("\n[========find a UAF write========]")
-                            # print("[UAF-W]trigger arbitrary write input:")
-                            # print(state.posix.dumps(0))
-                            # print("[UAF-W]stdout:")
-                            # print(state.posix.dumps(1))
-                            # print("[UAF-W]history jump chain:")
-                            # print(print_paths)
-                            # # input("[pause]")
-                            
-                            # if 'argv' in state.globals:
-                            #     argv=state.globals['argv']
-                            #     print("[UAF-W]inputs",len(argv),"args:")
-                            #     for x in argv:
-                            #         print(state.solver.eval(x,cast_to=bytes))
-                            # print(state.regs.rip)
-                            # print(act,hex(addr))
-                            # print(act.data)
-                            # # print(hex(state.callstack.ret_addr))
                             path_dir={'uaf_W_result':{}}
-                            # path_dir['pc_overflow_result']['over_num']=hex(byte_s)
                             path_dir['uaf_W_result']['stdin']=str(state.posix.dumps(0))
                             path_dir['uaf_W_result']['stdout']=str(state.posix.dumps(1))
                             path_dir['uaf_W_result']['chain']=print_paths
@@ -416,15 +356,9 @@ def Check_UAF_W(state):
                             json_str = json.dumps(path_dir)
                             fp.write(json_str+"\n")
                             fp.close()
-                            
 
-
-
-
-                            # input("[pause]")
                             state.globals["uaf_write"]=True
-                            
-                            
+         
                         break
 
 
@@ -439,17 +373,15 @@ def printable(blist):
 def Check_heap(binary,args=None,start_addr=None,limit=None):
     argv=ct.create_argv(binary,args)
     extras = {so.REVERSE_MEMORY_NAME_MAP, so.TRACK_ACTION_HISTORY,so.ZERO_FILL_UNCONSTRAINED_MEMORY}
-    # extras={}
     p = angr.Project(binary,auto_load_libs=False)#
     p.hook_symbol('malloc',malloc_hook())
     p.hook_symbol('free',free_hook())
-    # bytes_list = [claripy.BVS('in_0x%x' % i, 8) for i in range(size)]
-    # str_in = claripy.Concat(*bytes_list)
+
     if start_addr:
         state=p.factory.blank_state(addr=start_addr,add_options=extras)
     else:
         state=p.factory.full_init_state(args=argv,add_options=extras)#,stdin=str_in
-        # state=p.factory.full_init_state(add_options=extras)
+        # state=p.factory.entry_state(args=argv,add_options=extras)
     
     if len(argv)>=2:
         state.globals['argv']=[]
@@ -472,25 +404,14 @@ def Check_heap(binary,args=None,start_addr=None,limit=None):
 
     simgr = p.factory.simulation_manager(state)#, save_unconstrained=True
     simgr.use_technique(angr.exploration_techniques.Spiller())
-    # simgr.use_technique(angr.exploration_techniques.Veritesting())
-    # simgr.run()
+
     while simgr.active:
         for act in simgr.active:
-            # if "error_free_ptr" in act.globals or "double_free" in act.globals:
-            #     act.regs.rip=0x666
-                
-            # if "uaf_read" in act.globals:
-            #     act.regs.rip=0x666
-            #     # input("[pause]")
-            # if "uaf_write" in act.globals:
-            #     act.regs.rip=0x666
-            #     # input("[pause]")
-
+        	
             Check_UAF_R(act)
             Check_UAF_W(act)
         
         simgr.step()
-        # print("now->",simgr,"\n")
 
 if __name__ == '__main__':
     filename="./test8"

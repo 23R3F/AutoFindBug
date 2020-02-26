@@ -80,30 +80,12 @@ class printf_hook(angr.procedures.libc.printf.printf):
         if fmt_str.symbolic:
             hist= self.state.history.bbl_addrs.hardcopy
             print_paths=self.deal_history(self.state,hist)
-            # print("\n[========find a fmt bug========]")
-            # print("[fmt]trigger fmt input:")
-            # print(self.state.posix.dumps(0))
-            # print("[fmt]stdout:")
-            # print(self.state.posix.dumps(1))
-            # print("[fmt]history jump chain:")
-            # print(print_paths)
-            # # input("[pause]")
-            # if 'argv' in self.state.globals:
-            #     argv=self.state.globals['argv']
-            #     print("[fmt]inputs",len(argv),"args:")
-            #     for x in argv:
-            #         print(self.state.solver.eval(x,cast_to=bytes))
+
             path_dir={'fmt_result':{}}
-            # path_dir['pc_overflow_result']['over_num']=hex(byte_s)
             path_dir['fmt_result']['stdin']=str(self.state.posix.dumps(0))
             path_dir['fmt_result']['stdout']=str(self.state.posix.dumps(1))
             path_dir['fmt_result']['chain']=print_paths
 
-            # if 'argv' in state.globals:
-            #     argv=state.globals['argv']
-            #     print("[R]inputs",len(argv),"args:")
-            #     for x in argv:
-            #         print(state.solver.eval(x,cast_to=bytes))
             if 'argv'in self.state.globals:
                 argv=self.state.globals['argv']
                 argv_ret=[]
@@ -118,8 +100,8 @@ class printf_hook(angr.procedures.libc.printf.printf):
             fp.write(json_str+"\n")
             fp.close()
 
-
             return True
+
         return False
 
     def run(self):
@@ -136,13 +118,11 @@ def Check_format_string(binary,args=None,start_addr=None,limit=None):
     p = angr.Project(binary,auto_load_libs=False)#
     p.hook_symbol('printf',printf_hook())
 
-    # bytes_list = [claripy.BVS('in_0x%x' % i, 8) for i in range(size)]
-    # str_in = claripy.Concat(*bytes_list)
     if start_addr:
         state=p.factory.blank_state(addr=start_addr,add_options=extras)
     else:
         state=p.factory.full_init_state(args=argv,add_options=extras)#,stdin=str_in
-        # state=p.factory.full_init_state(add_options=extras)
+        # state=p.factory.entry_state(args=argv,add_options=extras)
     
     if len(argv)>=2:
         state.globals['argv']=[]
@@ -156,21 +136,12 @@ def Check_format_string(binary,args=None,start_addr=None,limit=None):
 
     state.globals['filename']=binary
     
-    
-
     simgr = p.factory.simulation_manager(state)#, save_unconstrained=True
     simgr.use_technique(angr.exploration_techniques.Spiller())
-    # simgr.use_technique(angr.exploration_techniques.Veritesting())
-    # simgr.run()
-    while simgr.active:
-        # for act in simgr.active:
-        #     Check_format(act)
-        simgr.step()
-        # print("now->",simgr,"\n")
 
-    # for x in simgr.deadended:
-    #     if 'fmt' in x.globals:
-    #         print_list(x.history.bbl_addrs.hardcopy)
+    while simgr.active:
+        simgr.step()
+
 
 if __name__ == '__main__':
     filename="./test7"
